@@ -1,0 +1,23 @@
+{
+    "name": "sugiphp/logger",
+    "type": "library",
+    "keywords": ["log", "logging"],
+    "licence": "MIT",
+    "authors": [
+        {
+            "name": "Plamen Popov",
+            "email": "tzappa@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.3",
+        "monolog/monolog": "1.4.*"
+    },
+    "autoload": {
+        "psr-0": { 
+            "SugiPHP\\Logger\\": ""
+        }
+    },
+    "target-dir": "SugiPHP/Logger",
+    "minimum-stability": "dev"
+}
