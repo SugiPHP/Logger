@@ -111,7 +111,7 @@ class Logger extends Monolog
 			}
 		}
 		// none found
-		if (null === $handlerKey) {
+		if ($handlerKey === null) {
 			return false;
 		}
 
@@ -121,7 +121,11 @@ class Logger extends Monolog
 		}
 		while (isset($this->handlers[$handlerKey])) {
 			if (static::isHandlingByFilter($level_name, $this->filters[$handlerKey])) {
-				$this->handlers[$handlerKey]->handle($record);
+				try {
+					$this->handlers[$handlerKey]->handle($record);
+				} catch (\Exception $e) {
+					// can't do anything!
+				}
 			}
 			$handlerKey++;
 		}
