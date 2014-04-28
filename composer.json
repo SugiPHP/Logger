@@ -11,7 +11,7 @@
     ],
     "require": {
         "php": ">=5.3",
-        "monolog/monolog": "1.4.*"
+        "monolog/monolog": "1.9.1"
     },
     "autoload": {
         "psr-4": {
