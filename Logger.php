@@ -83,7 +83,7 @@ class Logger extends AbstractLogger
 
         if ($filename = $this->getFileName()) {
             if (!$this->file) {
-                $this->file = fopen($filename, "w+");
+                $this->file = fopen($filename, "a");
             }
             fwrite($this->file, $formattedMessage . $this->getEol());
 
