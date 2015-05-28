@@ -85,7 +85,7 @@ class Logger extends AbstractLogger
             if (!$this->file) {
                 $this->file = fopen($filename, "w+");
             }
-            fwrite($this->file, $formattedMessage);
+            fwrite($this->file, $formattedMessage . $this->getEol());
 
             return null;
         }
@@ -266,6 +266,6 @@ class Logger extends AbstractLogger
             $msg
         );
 
-        return $msg . $this->getEol();
+        return $msg;
     }
 }

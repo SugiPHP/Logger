@@ -5,7 +5,7 @@ SugiPHP Logger is a simple file logger. It is [PSR-3](https://github.com/php-fig
 ## Installation
 
 ```bash
-composer require sugiphp/cache:v2.x@dev
+composer require sugiphp/logger:2.*@dev
 ```
 
 ## Usage
