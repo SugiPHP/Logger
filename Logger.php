@@ -1,158 +1,271 @@
 <?php
 /**
- * @package    SugiPHP
- * @subpackage Logger
- * @author     Plamen Popov <tzappa@gmail.com>
- * @license    http://opensource.org/licenses/mit-license.php (MIT License)
+ * @package SugiPHP.Logger
+ * @author  Plamen Popov <tzappa@gmail.com>
+ * @license http://opensource.org/licenses/mit-license.php (MIT License)
  */
 
 namespace SugiPHP\Logger;
 
-use Monolog\Logger as Monolog;
-use Monolog\Handler\StreamHandler;
-use Monolog\Handler\HandlerInterface;
+use Psr\Log\AbstractLogger;
+use Psr\Log\LogLevel;
+use Psr\Log\InvalidArgumentException;
+use DateTime;
 
-class Logger extends Monolog
+class Logger extends AbstractLogger
 {
-	const MONOLOG_LEVEL = 2147483647;
+    protected static $levels = array(
+        LogLevel::EMERGENCY, // 0
+        LogLevel::ALERT,     // 1
+        LogLevel::CRITICAL,  // 2
+        LogLevel::ERROR,     // 3
+        LogLevel::WARNING,   // 4
+        LogLevel::NOTICE,    // 5
+        LogLevel::INFO,      // 6
+        LogLevel::DEBUG      // 7
+    );
 
-	/**
-	 * Filters for every handler
-	 */
-	protected $filters = array();
+    private $filename = ""; // default is standard error log
+    private $logFormat = "[{datetime}] [{level}] {message} {context}";
+    private $logLevel = "debug";
+    private $dateFormat = "Y-m-d H:i:s";
+    private $eol = "\n";
+    protected $file;
 
-	/**
-	 * Overriding Monolog constructor.
-	 */
-	public function __construct()
-	{
-		parent::__construct("");
-	}
+    public function __construct(array $config = [])
+    {
+        if (isset($config["filename"])) {
+            $this->setFileName($config["filename"]);
+        }
+        if (isset($config["logFormat"])) {
+            $this->setFormat($config["logFormat"]);
+        }
+        if (isset($config["dateFormat"])) {
+            $this->setDateFormat($config["dateFormat"]);
+        }
+        if (isset($config["level"])) {
+            $this->setLevel($config["level"]);
+        }
+        if (isset($config["eol"])) {
+            $this->setEol($config["eol"]);
+        }
+    }
 
-	/**
-	 * Adds a handler to the stack.
-	 *
-	 * @param HandlerInterface $handler
-	 * @param string $filter
-	 */
-	public function addHandler(HandlerInterface $handler, $filter = "all")
-	{
-		$this->handlers[] = $handler;
-		$this->filters[] = $filter;
-	}
+    public function __destruct()
+    {
+        if ($this->file) {
+            fclose($this->file);
+        }
+    }
 
-	/**
-	 * Pushes a handler on to the stack.
-	 *
-	 * @param HandlerInterface $handler
-	 * @param string $filter
-	 */
-	public function pushHandler(HandlerInterface $handler, $filter = "all")
-	{
-		array_unshift($this->filters, $filter);
-		parent::pushHandler($handler);
-	}
+    /**
+     * Logs with an arbitrary level.
+     *
+     * @param mixed $level
+     * @param string $message
+     * @param array $context
+     *
+     * @return null
+     *
+     * @throws InvalidArgumentException
+     */
+    public function log($level, $message, array $context = array())
+    {
+        if (!$level = $this->getLevelName($level)) {
+            throw new InvalidArgumentException("Log level '" . $level . "' is invalid!");
+        }
 
-	/**
-	 * Pops a handler from the stack
-	 *
-	 * @return HandlerInterface
-	 */
-	public function popHandler()
-	{
-		$handler = parent::popHandler();
-		array_shift($this->filters);
+        if (!static::checkThreshold($level, $this->logLevel)) {
+            return null;
+        }
 
-		return $handler;
-	}
+        $formattedMessage = $this->formatMessage($level, $message, $context);
 
-	/**
-	 * Adds a log record.
-	 *
-	 * @param  mixed   $level   The logging level
-	 * @param  string  $message The log message
-	 * @param  array   $context The log context
-	 * @return boolean Whether the record has been processed
-	 */
-	public function addRecord($level, $message, array $context = array())
-	{
-		if (!$this->handlers) {
-			return false;
-		}
+        if ($filename = $this->getFileName()) {
+            if (!$this->file) {
+                $this->file = fopen($filename, "w+");
+            }
+            fwrite($this->file, $formattedMessage);
 
-		if (!static::$timezone) {
-			static::$timezone = new \DateTimeZone(date_default_timezone_get() ?: "UTC");
-		}
+            return null;
+        }
 
-		try {
-			$level_name = static::getLevelName($level);
-		} catch (\Exception $e) {
-			$level_name = $level;
-		}
+        error_log($formattedMessage);
+    }
 
-		$level_name = strtolower($level_name);
+    /**
+     * Returns the
+     * @return string when the
+     */
+    public function getFileName()
+    {
+        return $this->filename;
+    }
 
-		$record = array(
-			"message"    => (string) $message,
-			"context"    => $context,
-			"level_name" => $level_name,
-			"datetime"   => \DateTime::createFromFormat('U.u', sprintf('%.6F', microtime(true)), static::$timezone)->setTimezone(static::$timezone),
-			"extra"      => array(),
-			// these are not used by SugiPHP, but are required by Monolog
-			"level"      => static::MONOLOG_LEVEL,
-			"channel"    => $this->name,
-		);
-		// check if any handler will handle this message
-		$handlerKey = null;
-		foreach ($this->handlers as $key => $handler) {
-			if (static::isHandlingByFilter($level_name, $this->filters[$key])) {
-				$handlerKey = $key;
-				break;
-			}
-		}
-		// none found
-		if ($handlerKey === null) {
-			return false;
-		}
+    /**
+     * Sets the name of the file optionally with the full path and the extension.
+     * When the parameter is empty or missing the default error log will be used.
+     *
+     * @param string $filename
+     */
+    public function setFileName($filename = "")
+    {
+        if ($this->file) {
+            fclose($this->file);
+            unset($this->file);
+        }
 
-		// found at least one, process message and dispatch it
-		foreach ($this->processors as $processor) {
-			$record = call_user_func($processor, $record);
-		}
-		while (isset($this->handlers[$handlerKey])) {
-			if (static::isHandlingByFilter($level_name, $this->filters[$handlerKey])) {
-				try {
-					$this->handlers[$handlerKey]->handle($record);
-				} catch (\Exception $e) {
-					// can't do anything!
-				}
-			}
-			$handlerKey++;
-		}
+        $this->filename = (string) $filename;
+    }
 
-		return true;
-	}
+    /**
+     * Set Log Level Threshold.
+     *
+     * @param mixed $level
+     *
+     * @throws InvalidArgumentException
+     */
+    public function setLevel($level)
+    {
+        if (!$level = $this->getLevelName($level)) {
+            throw new InvalidArgumentException("Log level '" . $level . "' is invalid!");
+        }
 
-	/**
-	 * Checks the level is within allowed levels
-	 * 
-	 * @param  string $level_name
-	 * @param  string $filter 
-	 * @return boolean
-	 */
-	protected static function isHandlingByFilter($level_name, $filter = null)
-	{
-		if (is_null($filter)) {
-			return true;
-		}
+        $this->logLevel = $level;
+    }
 
-		$filter = strtolower($filter) . " ";
-		$level_name = strtolower($level_name);
-		if (strpos($filter, "none") === 0) {
-			return (strpos($filter, "+$level_name ") > 0);
-		}
+    /**
+     * Returns PSR-3 log level.
+     *
+     * @return string
+     */
+    public function getLevel()
+    {
+        return $this->logLevel;
+    }
 
-		return (strpos($filter, "-$level_name ") === false);
-	}
+    /**
+     * Sets Log Format
+     *
+     * @param string $format
+     */
+    public function setFormat($format)
+    {
+        if (!$format) {
+            throw new InvalidArgumentException("Log format cannot be empty!");
+        }
 
+        $this->logFormat = $format;
+    }
+
+    /**
+     * Returns Log Format
+     *
+     * @return string
+     */
+    public function getFormat()
+    {
+        return $this->logFormat;
+    }
+
+    /**
+     * Sets date format that will be used when formating message ({datetime} parameter)
+     *
+     * @param string $format
+     *
+     * @throws InvalidArgumentException On empty format
+     */
+    public function setDateFormat($format)
+    {
+        if (!$format) {
+            throw new InvalidArgumentException("Date format cannot be empty");
+        }
+
+        $this->dateFormat = $format;
+    }
+
+    /**
+     * Returns the date format that will be used when formating message ({datetime} parameter)
+     *
+     * @return string
+     */
+    public function getDateFormat()
+    {
+        return $this->dateFormat;
+    }
+
+    /**
+     * Sets the line endings when writing message.
+     *
+     * @param string $eol
+     */
+    public function setEol($eol)
+    {
+        $this->eol = $eol;
+    }
+
+    /**
+     * Returns line ending.
+     *
+     * @return string
+     */
+    public function getEol()
+    {
+        return $this->eol;
+    }
+
+    /**
+     * Returns the PSR-3 logging level name.
+     *
+     * @param string $level
+     *
+     * @return string
+     */
+    public static function getLevelName($level)
+    {
+        if (is_integer($level) && array_key_exists($level, static::$levels)) {
+            return static::$levels[$level];
+        }
+
+        $level = strtolower($level);
+
+        return in_array($level, static::$levels) ? $level : false;
+    }
+
+    /**
+     * Checks level is above log level threshold
+     *
+     * @param string $level
+     * @param string $threshold
+     *
+     * @return boolean
+     */
+    public static function checkThreshold($level, $threshold)
+    {
+        return array_search($threshold, static::$levels) >= array_search($level, static::$levels);
+    }
+
+    private function formatMessage($level, $message, $context)
+    {
+        $msg = $this->logFormat;
+        $msg = str_replace(
+            array(
+                "{datetime}",
+                "{level}",
+                "{LEVEL}",
+                "{message}",
+                "{context}"
+            ),
+            array(
+                date($this->getDateFormat()),
+                $level,
+                strtoupper($level),
+                (string) $message,
+                ($context) ? json_encode($context) : "",
+            ),
+            $msg
+        );
+
+        return $msg . $this->getEol();
+    }
 }

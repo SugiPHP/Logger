@@ -1,7 +1,7 @@
 {
     "name": "sugiphp/logger",
     "type": "library",
-    "keywords": ["log", "logging"],
+    "keywords": ["file logger"],
     "license": "MIT",
     "authors": [
         {
@@ -11,12 +11,11 @@
     ],
     "require": {
         "php": ">=5.3",
-        "monolog/monolog": "1.9.1"
+        "psr/log": "~1.0"
     },
     "autoload": {
         "psr-4": {
             "SugiPHP\\Logger\\": ""
         }
-    },
-    "minimum-stability": "dev"
+    }
 }
