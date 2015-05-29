@@ -68,7 +68,7 @@ class Logger extends AbstractLogger
      */
     protected $file;
 
-    public function __construct(array $config = [])
+    public function __construct(array $config = array())
     {
         if (isset($config["filename"])) {
             $this->setFileName($config["filename"]);
