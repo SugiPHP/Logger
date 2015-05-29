@@ -25,11 +25,47 @@ class Logger extends AbstractLogger
         LogLevel::DEBUG      // 7
     );
 
+    /**
+     * The filename usually with the path and the extension.
+     * Set to empty to send logs into default error log (default)
+     *
+     * @var string
+     */
     private $filename = ""; // default is standard error log
+
+    /**
+     * Log line format.
+     *
+     * @var string
+     */
     private $logFormat = "[{datetime}] [{level}] {message} {context}";
+
+    /**
+     * Level threshold. Default level is "debug", which means to log everything.
+     *
+     * @var string
+     */
     private $logLevel = "debug";
+
+    /**
+     * Date format used when formating line with {datetime} parameter.
+     *
+     * @var string
+     */
     private $dateFormat = "Y-m-d H:i:s";
+
+    /**
+     * End Of Line when saving to file. This is omitted in error_log.
+     *
+     * @var string
+     */
     private $eol = "\n";
+
+    /**
+     * Opened file handler.
+     *
+     * @var stream
+     */
     protected $file;
 
     public function __construct(array $config = [])

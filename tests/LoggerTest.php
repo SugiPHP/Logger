@@ -145,7 +145,7 @@ class LoggerTest extends PHPUnit_Framework_TestCase
      */
     public function testEmptyLogLevelOnCreateThrowsAnException()
     {
-        $logger = new Logger(["level" => ""]);
+        $logger = new Logger(array("level" => ""));
     }
 
     /**
@@ -163,7 +163,7 @@ class LoggerTest extends PHPUnit_Framework_TestCase
      */
     public function testUnknownLogLevelOnCreateThrowsAnException()
     {
-        $logger = new Logger(["level" => ""]);
+        $logger = new Logger(array("level" => "foo"));
     }
 
     public function testSetDateFormat()
@@ -188,7 +188,7 @@ class LoggerTest extends PHPUnit_Framework_TestCase
 
     public function testSetDateFormatOnCreate()
     {
-        $logger = new Logger(["dateFormat" => "H:i:s"]);
+        $logger = new Logger(array("dateFormat" => "H:i:s"));
         $this->assertSame("H:i:s", $logger->getDateFormat());
     }
 
@@ -197,7 +197,7 @@ class LoggerTest extends PHPUnit_Framework_TestCase
      */
     public function testSetEmptyDateFormatOnCreate()
     {
-        $logger = new Logger(["dateFormat" => ""]);
+        $logger = new Logger(array("dateFormat" => ""));
     }
 
     public function testSetFormat()
@@ -222,7 +222,7 @@ class LoggerTest extends PHPUnit_Framework_TestCase
 
     public function testSetFormatOnCreate()
     {
-        $logger = new Logger(["logFormat" => "[{level}] {message}"]);
+        $logger = new Logger(array("logFormat" => "[{level}] {message}"));
         $this->assertSame("[{level}] {message}", $logger->getFormat());
     }
 
@@ -231,7 +231,7 @@ class LoggerTest extends PHPUnit_Framework_TestCase
      */
     public function testSetEmptyFormatOnCreate()
     {
-        $logger = new Logger(["logFormat" => ""]);
+        $logger = new Logger(array("logFormat" => ""));
     }
 
     public function testLineEndings()
@@ -244,7 +244,7 @@ class LoggerTest extends PHPUnit_Framework_TestCase
         $logger->setEol("");
         $this->assertSame("", $logger->getEol());
         // Change EOL on creation
-        $logger = new Logger(["eol" => "\r"]);
+        $logger = new Logger(array("eol" => "\r"));
         $this->assertSame("\r", $logger->getEol());
     }
 
