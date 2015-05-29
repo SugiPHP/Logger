@@ -1,5 +1,7 @@
 # Logger (v2.x)
 
+[![Build Status](https://travis-ci.org/SugiPHP/Logger.svg?branch=v2.x)](https://travis-ci.org/SugiPHP/Logger)
+
 SugiPHP Logger is a simple file logger. It is [PSR-3](https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-3-logger-interface.md) compliant.
 
 ## Installation

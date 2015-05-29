@@ -120,6 +120,16 @@ class LoggerTest extends PHPUnit_Framework_TestCase
         $this->assertTrue(Logger::checkThreshold("emergency", "error"));
     }
 
+    public function testLogFileName()
+    {
+        $logger = new logger();
+        $this->assertSame("", $logger->getFileName());
+        $logger->setFileName("php://memory");
+        $this->assertSame("php://memory", $logger->getFileName());
+        $logger->setFileName("");
+        $this->assertSame("", $logger->getFileName());
+    }
+
     public function testSetLevel()
     {
         $logger = new Logger();
